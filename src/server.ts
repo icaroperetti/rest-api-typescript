@@ -1,4 +1,5 @@
 import { Server } from '@overnightjs/core'
+import 'dotenv/config'
 import express, { Application } from 'express'
 import { ForecastController } from './controllers/forecast'
 import './util/module-alias'
