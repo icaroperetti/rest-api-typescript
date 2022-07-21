@@ -1,12 +1,14 @@
 import { InternalError } from '@src/util/errors/internal-error'
-import * as HTTPUtil from '@src/util/request'
 import config, { IConfig } from 'config'
+// Another way to have similar behaviour to TS namespaces
+import * as HTTPUtil from '@src/util/request'
 
 export interface StormGlassPointSource {
   [key: string]: number
 }
+
 export interface StormGlassPoint {
-  readonly time: string
+  time: string
   readonly waveHeight: StormGlassPointSource
   readonly waveDirection: StormGlassPointSource
   readonly swellDirection: StormGlassPointSource
@@ -15,6 +17,7 @@ export interface StormGlassPoint {
   readonly windDirection: StormGlassPointSource
   readonly windSpeed: StormGlassPointSource
 }
+
 export interface StormGlassForecastResponse {
   hours: StormGlassPoint[]
 }
@@ -30,21 +33,37 @@ export interface ForecastPoint {
   windSpeed: number
 }
 
+/**
+ * This error type is used when a request reaches out to the StormGlass API but returns an error
+ */
+export class StormGlassUnexpectedResponseError extends InternalError {
+  constructor(message: string) {
+    super(message)
+  }
+}
+
+/**
+ * This error type is used when something breaks before the request reaches out to the StormGlass API
+ * eg: Network error, or request validation error
+ */
 export class ClientRequestError extends InternalError {
   constructor(message: string) {
-    const internalMessage = `Unexpected error when trying to communicate to StormGlass`
+    const internalMessage = 'Unexpected error when trying to communicate to StormGlass'
     super(`${internalMessage}: ${message}`)
   }
 }
 
 export class StormGlassResponseError extends InternalError {
   constructor(message: string) {
-    const internalMessage = `Unexpected error returned by the StormGlass service`
+    const internalMessage = 'Unexpected error returned by the StormGlass service'
     super(`${internalMessage}: ${message}`)
   }
 }
 
-const stormGlassResourceConfig: IConfig = config.get('App.resources.StormGlass')
+/**
+ * We could have proper type for the configuration
+ */
+const stormglassResourceConfig: IConfig = config.get('App.resources.StormGlass')
 
 export class StormGlass {
   readonly stormGlassAPIParams =
@@ -53,27 +72,32 @@ export class StormGlass {
 
   constructor(protected request = new HTTPUtil.Request()) {}
 
-  public async fetchPoints(lat: number, lng: number): Promise<{}> {
+  public async fetchPoints(lat: number, lng: number): Promise<ForecastPoint[]> {
     try {
       const response = await this.request.get<StormGlassForecastResponse>(
-        `${stormGlassResourceConfig.get('apiUrl')}/weather/point?params=${this.stormGlassAPIParams}&source=${
-          this.stormGlassAPISource
-        }&end=1592113802&lat=${lat}&lng=${lng}`,
+        `${stormglassResourceConfig.get('apiUrl')}/weather/point?lat=${lat}&lng=${lng}&params=${
+          this.stormGlassAPIParams
+        }&source=${this.stormGlassAPISource}`,
         {
           headers: {
-            Authorization: stormGlassResourceConfig.get('apiToken'),
+            Authorization: stormglassResourceConfig.get('apiToken'),
           },
         }
       )
       return this.normalizeResponse(response.data)
-    } catch (err: any) {
-      if (HTTPUtil.Request.isRequestError(err)) {
-        throw new StormGlassResponseError(`Error: ${JSON.stringify(err.response.data)} Code: ${err.response.status}`)
+    } catch (err) {
+      //@Updated 2022 to support Error as unknown
+      //https://devblogs.microsoft.com/typescript/announcing-typescript-4-4/#use-unknown-catch-variables
+      if (err instanceof Error && HTTPUtil.Request.isRequestError(err)) {
+        const error = HTTPUtil.Request.extractErrorData(err)
+        throw new StormGlassResponseError(`Error: ${JSON.stringify(error.data)} Code: ${error.status}`)
       }
-      throw new ClientRequestError(err.message)
+      /**
+       * All the other errors will fallback to a generic client error
+       */
+      throw new ClientRequestError(JSON.stringify(err))
     }
   }
-
   private normalizeResponse(points: StormGlassForecastResponse): ForecastPoint[] {
     return points.hours.filter(this.isValidPoint.bind(this)).map((point) => ({
       swellDirection: point.swellDirection[this.stormGlassAPISource],
@@ -90,11 +114,11 @@ export class StormGlass {
   private isValidPoint(point: Partial<StormGlassPoint>): boolean {
     return !!(
       point.time &&
-      point.waveHeight?.[this.stormGlassAPISource] &&
-      point.waveDirection?.[this.stormGlassAPISource] &&
       point.swellDirection?.[this.stormGlassAPISource] &&
       point.swellHeight?.[this.stormGlassAPISource] &&
       point.swellPeriod?.[this.stormGlassAPISource] &&
+      point.waveDirection?.[this.stormGlassAPISource] &&
+      point.waveHeight?.[this.stormGlassAPISource] &&
       point.windDirection?.[this.stormGlassAPISource] &&
       point.windSpeed?.[this.stormGlassAPISource]
     )
