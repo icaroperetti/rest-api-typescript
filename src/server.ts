@@ -2,6 +2,7 @@ import { Server } from '@overnightjs/core'
 import * as database from '@src/database'
 import 'dotenv/config'
 import express, { Application } from 'express'
+import { BeachesController } from './controllers/beaches'
 import { ForecastController } from './controllers/forecast'
 import './util/module-alias'
 export class SetupServer extends Server {
@@ -21,7 +22,8 @@ export class SetupServer extends Server {
 
   private setupControllers(): void {
     const forecastController = new ForecastController()
-    this.addControllers([forecastController])
+    const beachesController = new BeachesController()
+    this.addControllers([forecastController, beachesController])
   }
 
   public getApp(): Application {
