@@ -1,6 +1,6 @@
 import { Server } from '@overnightjs/core'
 import * as database from '@src/database'
-import 'dotenv/config'
+// import 'dotenv/config'
 import express, { Application } from 'express'
 import { BeachesController } from './controllers/beaches'
 import { ForecastController } from './controllers/forecast'
