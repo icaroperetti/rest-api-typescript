@@ -1,20 +1,41 @@
 import { StormGlass } from '@src/clients/stormGlass'
-import { Beach, BeachPosition } from '@src/models/beach'
+import { GeoPosition } from '@src/models/beach'
 import stormGlassNormalizedResponseFixture from '@test/fixtures/stormglass_normalized_response_3_hours.json'
 import { Forecast, ForecastProcessingInternalError } from '../forecast'
+import { ExistingBeach } from './../../models/beach'
 
 jest.mock('@src/clients/stormGlass')
 
 describe('Forecast Service', () => {
+  const defaultBeaches: ExistingBeach[] = [
+    {
+      id: 'fake-id1',
+      lat: -33.792726,
+      lng: 151.289824,
+      name: 'Manly',
+      position: GeoPosition.E,
+      userId: 'fake-id',
+    },
+    {
+      id: 'fake-id2',
+      lat: -33.792726,
+      lng: 141.289824,
+      name: 'Dee Why',
+      position: GeoPosition.S,
+      userId: 'fake-id',
+    },
+  ]
   const mockedStormGlassService = new StormGlass() as jest.Mocked<StormGlass>
   it('should return the forecast for a list of beaches', async () => {
     mockedStormGlassService.fetchPoints.mockResolvedValue(stormGlassNormalizedResponseFixture)
-    const beaches: Beach[] = [
+    const beaches: ExistingBeach[] = [
       {
+        id: 'fake-id1',
         lat: -33.792726,
         lng: 151.289824,
         name: 'Manly',
-        position: BeachPosition.E,
+        position: GeoPosition.E,
+        userId: 'fake-id',
       },
     ]
     const expectedResponse = [
@@ -26,7 +47,7 @@ describe('Forecast Service', () => {
             lng: 151.289824,
             name: 'Manly',
             position: 'E',
-            rating: 1,
+            rating: 2,
             swellDirection: 64.26,
             swellHeight: 0.15,
             swellPeriod: 3.89,
@@ -46,7 +67,7 @@ describe('Forecast Service', () => {
             lng: 151.289824,
             name: 'Manly',
             position: 'E',
-            rating: 1,
+            rating: 2,
             swellDirection: 123.41,
             swellHeight: 0.21,
             swellPeriod: 3.67,
@@ -66,7 +87,7 @@ describe('Forecast Service', () => {
             lng: 151.289824,
             name: 'Manly',
             position: 'E',
-            rating: 1,
+            rating: 2,
             swellDirection: 182.56,
             swellHeight: 0.28,
             swellPeriod: 3.44,
@@ -90,12 +111,14 @@ describe('Forecast Service', () => {
   })
 
   it('should throw internal processing error when something goes wrong during the rating process', async () => {
-    const beaches: Beach[] = [
+    const beaches: ExistingBeach[] = [
       {
+        id: 'fake-id1',
         lat: -33.792726,
         lng: 151.289824,
         name: 'Manly',
-        position: BeachPosition.E,
+        position: GeoPosition.E,
+        userId: 'fake-id',
       },
     ]
     mockedStormGlassService.fetchPoints.mockRejectedValue('Error fetching data')
