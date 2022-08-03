@@ -13,7 +13,7 @@ describe('Forecast Service', () => {
       lng: 151.289824,
       name: 'Manly',
       position: GeoPosition.E,
-      userId: 'fake-id',
+      //: 'fake-id',
     },
     {
       id: 'fake-id2',
@@ -21,7 +21,7 @@ describe('Forecast Service', () => {
       lng: 141.289824,
       name: 'Dee Why',
       position: GeoPosition.S,
-      userId: 'fake-id',
+      //userId: 'fake-id',
     },
   ]
   const mockedStormGlassService = new StormGlass() as jest.Mocked<StormGlass>
@@ -34,7 +34,7 @@ describe('Forecast Service', () => {
         lng: 151.289824,
         name: 'Manly',
         position: GeoPosition.E,
-        userId: 'fake-id',
+        //userId: 'fake-id',
       },
     ]
     const expectedResponse = [
@@ -118,7 +118,7 @@ describe('Forecast Service', () => {
         lng: 151.289824,
         name: 'Manly',
         position: GeoPosition.E,
-        userId: 'fake-id',
+        // userId: 'fake-id',
       },
     ]
     mockedStormGlassService.fetchPoints.mockRejectedValue('Error fetching data')
